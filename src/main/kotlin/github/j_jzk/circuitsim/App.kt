@@ -6,9 +6,12 @@ package github.j_jzk.circuitsim
 import java.awt.BorderLayout
 import javax.swing.JFrame
 import javax.swing.JLabel
+import javax.swing.UIManager
+import java.awt.EventQueue
+import javax.swing.SwingUtilities
 
 class App: JFrame("Logic Circuit Simulator") {
-	init {
+	fun initGui() {		
 		setLayout(BorderLayout())
 		defaultCloseOperation = JFrame.EXIT_ON_CLOSE
 		setSize(800, 600)
@@ -26,5 +29,18 @@ class App: JFrame("Logic Circuit Simulator") {
 }
 
 fun main(args: Array<String>) {
-    App()
+	val app = App()
+	
+	//use anti-aliased fonts - doesn't work for some reason
+	System.setProperty("awt.useSystemAAFontSettings","on");
+	System.setProperty("swing.aatext", "true");
+	
+	try {
+		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+		SwingUtilities.updateComponentTreeUI(app)
+	} catch (e: Exception) {
+		//do nothing, continue with the default look and feel
+	}
+	
+	EventQueue.invokeLater { app.initGui() }
 }

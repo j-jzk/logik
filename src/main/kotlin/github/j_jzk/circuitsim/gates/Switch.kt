@@ -18,13 +18,10 @@ class Switch(override var x: Int, override var y: Int): Gate {
 	}
 	
 	override public fun render(g: Graphics) {		
-		if (state)
+		if (state) {
 			g.color = Color.RED
-		else
-			g.color = Color.WHITE
-		
-		g.fillRect(x+1, y+1, w-1, h-1)
-		
-		g.color = Color.BLACK
+			g.fillRect(x+1, y+1, w-1, h-1)
+			g.color = Color.BLACK
+		}
 	}
 }

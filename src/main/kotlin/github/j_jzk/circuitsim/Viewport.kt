@@ -23,6 +23,8 @@ import java.awt.event.KeyEvent
 import javax.swing.KeyStroke
 import javax.swing.AbstractAction
 import java.awt.event.ActionEvent
+import java.awt.RenderingHints
+import java.awt.Graphics2D
 
 class Viewport(val statusBar: JLabel): JPanel() {
 	private var gates = mutableListOf<Gate>()
@@ -50,6 +52,9 @@ class Viewport(val statusBar: JLabel): JPanel() {
 
 	
 	override public fun paintComponent(g: Graphics) {
+		if (g is Graphics2D)
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		
 		super.paintComponent(g)
 		
 		for (gate in gates) {
@@ -182,15 +187,19 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		
 		override fun mouseDragged(e: MouseEvent) {
 			dragged = true
-			selectedGate?.x = e.x
-			selectedGate?.y = e.y
+			selectedGate?.let {
+				it.x = e.x - it.w / 2
+				it.y = e.y - it.h / 2
+			}
 			repaint()
 		}
 		
 		override fun mouseReleased(e: MouseEvent) {
 			if (dragged) {
-				selectedGate?.x = e.x
-				selectedGate?.y = e.y
+				selectedGate?.let {
+					it.x = e.x - it.w / 2
+					it.y = e.y - it.h / 2
+				}
 			
 				repaint()
 				

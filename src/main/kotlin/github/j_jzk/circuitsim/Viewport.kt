@@ -149,6 +149,9 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		
 		override fun mouseDragged(e: MouseEvent) {
 			dragged = true
+			selectedGate?.x = e.x
+			selectedGate?.y = e.y
+			repaint()
 		}
 		
 		override fun mouseReleased(e: MouseEvent) {

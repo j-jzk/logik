@@ -19,15 +19,11 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		addMouseMotionListener(handler)
 	}
 	
-	private val gates = mutableListOf<Gate>(Switch(10, 10), Switch(20, 100), Lamp(40, 50))
+	private val gates = mutableListOf<Gate>()
 	private var selectedGate: Gate? = null
 	private val action = Action()
 	public val toolbar = ToolbarHandler()
 	
-	init {
-		gates[2].inputs.add(gates[0])
-		gates[0].outputs.add(gates[2])
-	}
 	
 	override public fun paintComponent(g: Graphics) {
 		super.paintComponent(g)
@@ -80,7 +76,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 						gate.onClick()
 						repaint()
 					}
-				action.ADD_INPUT -> if (gate != null) {
+				action.ADD_INPUT -> if (gate != null && action.subject !== gate) {
 						action.subject?.inputs?.add(gate)
 						action.subject?.let { gate.outputs.add(it) }
 						repaint()
@@ -91,6 +87,12 @@ class Viewport(val statusBar: JLabel): JPanel() {
 						it.inputs.remove(gate)
 						gate.outputs.remove(it)
 					}
+				}
+				
+				action.ADD_GATE -> action.subject?.let {
+					it.x = e.x
+					it.y = e.y
+					gates.add(it)
 				}
 			}
 			
@@ -151,8 +153,10 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			}
 		}
 		
-		inline fun <reified T: Gate> addGate() {
-			
+		fun addGate(gate: Gate) {
+			action.setCurrent(action.ADD_GATE)
+			action.subject = gate
+			statusBar.text = "Click to select position"
 		}
 	}
 	

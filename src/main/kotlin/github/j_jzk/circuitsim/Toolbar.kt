@@ -9,7 +9,14 @@ class Toolbar(val vp: Viewport): JPanel() {
 	init {
 		setLayout(BoxLayout(this, BoxLayout.Y_AXIS))
 
-		fun space() = add(Box.createVerticalStrut(7)) 
+		fun space() = add(Box.createVerticalStrut(7))
+		fun addCreateBtn(btn: JButton, gate: () -> Gate, key: Int? = null) {
+			if (key != null)
+				btn.setMnemonic(key)
+			btn.addActionListener(ActionListener { vp.toolbar.addGate(gate()) })
+			add(btn)
+			space()
+		}
 		
 		space()
 		add(JLabel("Gate"))
@@ -30,20 +37,14 @@ class Toolbar(val vp: Viewport): JPanel() {
 			space()
 		add(JLabel("Nodes"))
 		space()
-		val createSwitchBtn = JButton("Create input node")
-			createSwitchBtn.addActionListener(ActionListener { vp.toolbar.addGate(Switch(0,0)) })
-			add(createSwitchBtn)
-			space()
-		val createLampBtn = JButton("Create output node")
-			createLampBtn.addActionListener(ActionListener { vp.toolbar.addGate(Lamp(0,0)) })
-			add(createLampBtn)
-			space()
-		val createNotBtn = JButton("Create NOT gate")
-			createNotBtn.setMnemonic(KeyEvent.VK_N)
-			createNotBtn.addActionListener(ActionListener { vp.toolbar.addGate(Not(0,0)) })
-			add(createNotBtn)
-			space()
 		
+		addCreateBtn(JButton("Create input node"), { Switch(0,0) })
+		addCreateBtn(JButton("Create output node"), { Lamp(0,0) })
+		addCreateBtn(JButton("Create NOT gate"), { Not(0,0) }, KeyEvent.VK_N)
+		addCreateBtn(JButton("Create AND gate"), { And(0,0) }, KeyEvent.VK_A)
+		addCreateBtn(JButton("Create OR gate"), { Or(0,0) }, KeyEvent.VK_O)
+		
+
 		
 	}
 }

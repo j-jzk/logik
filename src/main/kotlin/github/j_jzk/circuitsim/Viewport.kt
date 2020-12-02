@@ -24,7 +24,6 @@ class Viewport(val statusBar: JLabel): JPanel() {
 	private val action = Action()
 	public val toolbar = ToolbarHandler()
 	
-	
 	override public fun paintComponent(g: Graphics) {
 		super.paintComponent(g)
 		

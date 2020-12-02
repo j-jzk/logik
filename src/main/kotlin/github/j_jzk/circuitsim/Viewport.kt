@@ -3,6 +3,7 @@ package github.j_jzk.circuitsim
 import github.j_jzk.circuitsim.gates.Gate
 import github.j_jzk.circuitsim.gates.Switch
 import github.j_jzk.circuitsim.gates.Lamp
+import github.j_jzk.circuitsim.sketch.Saver
 import java.awt.Color
 import java.awt.Graphics
 import java.awt.event.MouseEvent
@@ -13,6 +14,9 @@ import javax.swing.JButton
 import javax.swing.JLabel
 import kotlin.math.abs
 import kotlin.math.min
+import javax.swing.JFileChooser
+import javax.swing.filechooser.FileFilter
+import javax.swing.filechooser.FileNameExtensionFilter
 
 class Viewport(val statusBar: JLabel): JPanel() {
 	init {
@@ -202,6 +206,26 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			action.setCurrent(action.ADD_GATE)
 			action.subject = gate
 			statusBar.text = "Click to select position"
+		}
+		
+		fun save() {
+			val fileChooser = JFileChooser()
+			fileChooser.dialogTitle = "Specify a save path"
+			fileChooser.setFileFilter(FileNameExtensionFilter("Sketch files (*.lgk)", "lgk"))
+			val result = fileChooser.showSaveDialog(parent)
+			
+			if (result == JFileChooser.APPROVE_OPTION) { //the user didn't cancel the file save
+				val file = fileChooser.getSelectedFile()
+				try {
+					file.writeText(Saver.encode(gates.toTypedArray()))
+					statusBar.text = "File successfully saved."
+				} catch (e: Exception) {
+					statusBar.text = "ERROR SAVING FILE: ${e.message} (see terminal output for details)"
+					e.printStackTrace()
+				}
+			} else {
+				statusBar.text = "Save cancelled."
+			}
 		}
 	}
 	

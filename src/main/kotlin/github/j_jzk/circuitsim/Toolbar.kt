@@ -19,6 +19,13 @@ class Toolbar(val vp: Viewport): JPanel() {
 		}
 		
 		space()
+		add(JLabel("Sketch"))
+		space()
+		val saveBtn = JButton("Save (Ctrl+S)")
+			saveBtn.addActionListener(ActionListener { vp.toolbar.save() })
+			add(saveBtn)
+			space()
+		
 		add(JLabel("Gate"))
 		space()
 		val addInputBtn = JButton("Add input (right click)")

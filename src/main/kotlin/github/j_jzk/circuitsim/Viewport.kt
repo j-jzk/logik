@@ -11,6 +11,8 @@ import javax.swing.event.MouseInputAdapter
 import java.awt.Cursor
 import javax.swing.JButton
 import javax.swing.JLabel
+import kotlin.math.abs
+import kotlin.math.min
 
 class Viewport(val statusBar: JLabel): JPanel() {
 	init {
@@ -31,11 +33,18 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			renderGate(gate, g)
 		}
 		
+		//draw a blue box around the selected node
 		selectedGate?.let { // if (selectedGate != null)
 			g.setColor(Color.BLUE)
 			g.drawRect(it.x-1, it.y-1, it.w+2, it.h+2)
 			g.setColor(Color.BLACK)
 		}
+		
+		//draw a line if the user is connecting an input
+		if (action.current == action.ADD_INPUT) {
+			g.drawLine(action.x1, action.y1, action.x2, action.y2)
+		}		
+		
 	}
 	
 	private fun renderGate(gate: Gate, gr: Graphics) {
@@ -70,38 +79,72 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		
 		override fun mouseClicked(e: MouseEvent) {
 			val gate = getGateAt(e.x, e.y)
-			when (action.current) {
-				action.NOTHING -> if (gate != null) {
-						gate.onClick()
-						repaint()
+			if (e.getButton() == MouseEvent.BUTTON1) {
+							
+				when (action.current) {
+					action.NOTHING -> if (gate != null) {
+							gate.onClick()
+							repaint()
+						} else {
+							//deselect
+							selectedGate = null
+							repaint()
+						}
+					action.ADD_INPUT -> if (gate != null && action.subject !== gate) {
+							action.subject?.inputs?.add(gate)
+							action.subject?.let { gate.outputs.add(it) }
+							action.x1 = 0; action.x2 = 0; action.y1 = 0; action.y2 = 0
+							repaint()
+						}
+				
+					action.DEL_INPUT -> if (gate != null) {
+						action.subject?.let {
+							it.inputs.remove(gate)
+							gate.outputs.remove(it)
+						}
 					}
-				action.ADD_INPUT -> if (gate != null && action.subject !== gate) {
-						action.subject?.inputs?.add(gate)
-						action.subject?.let { gate.outputs.add(it) }
-						repaint()
-					}
-			
-				action.DEL_INPUT -> if (gate != null) {
-					action.subject?.let {
-						it.inputs.remove(gate)
-						gate.outputs.remove(it)
+					
+					action.ADD_GATE -> action.subject?.let {
+						it.x = e.x
+						it.y = e.y
+						gates.add(it)
 					}
 				}
 				
-				action.ADD_GATE -> action.subject?.let {
-					it.x = e.x
-					it.y = e.y
-					gates.add(it)
+				action.setCurrent(action.NOTHING)
+				statusBar.text = ""
+				dragged = false
+			} else if (e.getButton() == MouseEvent.BUTTON3) {
+				if (gate != null) {
+					selectedGate = gate
+					toolbar.addGateInput()
 				}
 			}
-			
-			action.setCurrent(action.NOTHING)
-			statusBar.text = ""
-			dragged = false
+		}
+		
+		override fun mouseMoved(e: MouseEvent) {
+			if (action.current == action.ADD_INPUT) {
+				action.subject?.let {
+					action.x1 = it.x
+					action.y1 = it.y + it.h/2
+				}
+
+				action.x2 = e.x
+				action.y2 = e.y
+				
+				/*repaint(min(action.x1, action.x2) - 20,
+					min(action.y1, action.y2) - 20,
+					abs(action.x1 - action.x2) + 20,
+					abs(action.y1 - action.y2) + 20)*/
+				repaint()
+			}
 		}
 		
 		override fun mousePressed(e: MouseEvent) {
-			selectedGate = getGateAt(e.x, e.y)
+			if (e.getButton() == MouseEvent.BUTTON1)
+				selectedGate = getGateAt(e.x, e.y)
+			else
+				selectedGate = null
 		}
 		
 		override fun mouseDragged(e: MouseEvent) {
@@ -121,7 +164,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 	}
 	
 	public inner class ToolbarHandler {
-		fun addGateInput(btn: JButton) {
+		fun addGateInput() {
 			if (selectedGate != null) {
 				action.setCurrent(action.ADD_INPUT)
 				action.subject = selectedGate
@@ -131,7 +174,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			}
 		}
 		
-		fun delGateInput(btn: JButton) {
+		fun delGateInput() {
 			if (selectedGate != null) {
 				action.setCurrent(action.DEL_INPUT)
 				action.subject = selectedGate
@@ -177,5 +220,11 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		}
 		
 		var subject: Gate? = null
+		
+		//connection line
+		var x1 = 0
+		var y1 = 0
+		var x2 = 0
+		var y2 = 0
 	}
 }

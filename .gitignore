@@ -7,3 +7,5 @@ build
 # Ignore Eclipse (?) files
 .project
 .settings
+
+logik.jar

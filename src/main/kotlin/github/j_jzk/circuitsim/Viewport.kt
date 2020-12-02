@@ -3,7 +3,7 @@ package github.j_jzk.circuitsim
 import github.j_jzk.circuitsim.gates.Gate
 import github.j_jzk.circuitsim.gates.Switch
 import github.j_jzk.circuitsim.gates.Lamp
-import github.j_jzk.circuitsim.sketch.Saver
+import github.j_jzk.circuitsim.Sketch
 import java.awt.Color
 import java.awt.Graphics
 import java.awt.event.MouseEvent
@@ -17,6 +17,7 @@ import kotlin.math.min
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileFilter
 import javax.swing.filechooser.FileNameExtensionFilter
+import java.io.File
 
 class Viewport(val statusBar: JLabel): JPanel() {
 	init {
@@ -25,7 +26,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		addMouseMotionListener(handler)
 	}
 	
-	private val gates = mutableListOf<Gate>()
+	private var gates = mutableListOf<Gate>()
 	private var selectedGate: Gate? = null
 	private val action = Action()
 	public val toolbar = ToolbarHandler()
@@ -215,9 +216,11 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			val result = fileChooser.showSaveDialog(parent)
 			
 			if (result == JFileChooser.APPROVE_OPTION) { //the user didn't cancel the file save
-				val file = fileChooser.getSelectedFile()
+				var file = fileChooser.getSelectedFile()
+				if (file.extension == "")
+					file = File(file.getPath() + ".lgk")
 				try {
-					file.writeText(Saver.encode(gates.toTypedArray()))
+					file.writeText(Sketch.encode(gates.toTypedArray()))
 					statusBar.text = "File successfully saved."
 				} catch (e: Exception) {
 					statusBar.text = "ERROR SAVING FILE: ${e.message} (see terminal output for details)"
@@ -225,6 +228,26 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				}
 			} else {
 				statusBar.text = "Save cancelled."
+			}
+		}
+		
+		fun load() {
+			val fileChooser = JFileChooser()
+			fileChooser.dialogTitle = "Select a sketch file"
+			fileChooser.setFileFilter(FileNameExtensionFilter("Sketch files (*.lgk)", "lgk"))
+			val result = fileChooser.showOpenDialog(parent)
+			
+			if (result == JFileChooser.APPROVE_OPTION) {
+				val file = fileChooser.getSelectedFile()
+				try {
+					gates = Sketch.decode(file.readText()).toMutableList()
+					statusBar.text = "Sketch loaded successfully."
+				} catch (e: Exception) {
+					statusBar.text = "ERROR LOADING FILE: ${e.message} (see terminal output for details)"
+					e.printStackTrace()
+				}
+				
+				repaint()
 			}
 		}
 	}

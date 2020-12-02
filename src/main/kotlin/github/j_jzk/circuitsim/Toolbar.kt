@@ -25,6 +25,10 @@ class Toolbar(val vp: Viewport): JPanel() {
 			saveBtn.addActionListener(ActionListener { vp.toolbar.save() })
 			add(saveBtn)
 			space()
+		val loadBtn = JButton("Load (Ctrl+O)")
+			loadBtn.addActionListener(ActionListener { vp.toolbar.load() })
+			add(loadBtn)
+			space()
 		
 		add(JLabel("Gate"))
 		space()

@@ -7,6 +7,7 @@ class Switch(override var x: Int, override var y: Int): Gate {
 	override public val inputs = mutableListOf<Gate>()
 	override public val w = 25
 	override public val h = 25
+	override public val outputs = mutableListOf<Gate>()
 	
 	private var state = false
 	

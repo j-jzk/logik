@@ -5,6 +5,7 @@ package github.j_jzk.circuitsim
 
 import java.awt.BorderLayout
 import javax.swing.JFrame
+import javax.swing.JLabel
 
 class App: JFrame("Logic Circuit Simulator") {
 	init {
@@ -12,7 +13,12 @@ class App: JFrame("Logic Circuit Simulator") {
 		defaultCloseOperation = JFrame.EXIT_ON_CLOSE
 		setSize(800, 600)
 		
-		add(Viewport(), BorderLayout.CENTER)
+		val statusBar = JLabel("")
+		val vp = Viewport(statusBar)
+		add(vp, BorderLayout.CENTER)
+		add(Toolbar(vp), BorderLayout.LINE_END)
+		add(statusBar, BorderLayout.PAGE_END)
+		
 		pack()
 		
 		setVisible(true)

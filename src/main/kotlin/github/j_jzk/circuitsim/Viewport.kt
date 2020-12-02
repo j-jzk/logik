@@ -8,8 +8,11 @@ import java.awt.Graphics
 import java.awt.event.MouseEvent
 import javax.swing.JPanel
 import javax.swing.event.MouseInputAdapter
+import java.awt.Cursor
+import javax.swing.JButton
+import javax.swing.JLabel
 
-class Viewport: JPanel() {
+class Viewport(val statusBar: JLabel): JPanel() {
 	init {
 		val handler = MouseHandler()
 		addMouseListener(handler)
@@ -17,10 +20,13 @@ class Viewport: JPanel() {
 	}
 	
 	private val gates = mutableListOf<Gate>(Switch(10, 10), Switch(20, 100), Lamp(40, 50))
-	var selectedGate: Gate? = null
+	private var selectedGate: Gate? = null
+	private val action = Action()
+	public val toolbar = ToolbarHandler()
 	
 	init {
 		gates[2].inputs.add(gates[0])
+		gates[0].outputs.add(gates[2])
 	}
 	
 	override public fun paintComponent(g: Graphics) {
@@ -28,6 +34,12 @@ class Viewport: JPanel() {
 		
 		for (gate in gates) {
 			renderGate(gate, g)
+		}
+		
+		selectedGate?.let { // if (selectedGate != null)
+			g.setColor(Color.BLUE)
+			g.drawRect(it.x-1, it.y-1, it.w+2, it.h+2)
+			g.setColor(Color.BLACK)
 		}
 	}
 	
@@ -63,28 +75,40 @@ class Viewport: JPanel() {
 		
 		override fun mouseClicked(e: MouseEvent) {
 			val gate = getGateAt(e.x, e.y)
-			if (gate != null) {
-				gate.onClick()
-				repaint()
+			when (action.current) {
+				action.NOTHING -> if (gate != null) {
+						gate.onClick()
+						repaint()
+					}
+				action.ADD_INPUT -> if (gate != null) {
+						action.subject?.inputs?.add(gate)
+						action.subject?.let { gate.outputs.add(it) }
+						repaint()
+					}
+			
+				action.DEL_INPUT -> if (gate != null) {
+					action.subject?.let {
+						it.inputs.remove(gate)
+						gate.outputs.remove(it)
+					}
+				}
 			}
 			
+			action.setCurrent(action.NOTHING)
+			statusBar.text = ""
 			dragged = false
 		}
 		
 		override fun mousePressed(e: MouseEvent) {
-			println("press")
 			selectedGate = getGateAt(e.x, e.y)
 		}
 		
 		override fun mouseDragged(e: MouseEvent) {
-			println("drag")
 			dragged = true
 		}
 		
 		override fun mouseReleased(e: MouseEvent) {
-			println("release")
 			if (dragged) {
-				println("moving")
 				selectedGate?.x = e.x
 				selectedGate?.y = e.y
 			
@@ -93,5 +117,62 @@ class Viewport: JPanel() {
 				dragged = false //reset	
 			}
 		}
+	}
+	
+	public inner class ToolbarHandler {
+		fun addGateInput(btn: JButton) {
+			if (selectedGate != null) {
+				action.setCurrent(action.ADD_INPUT)
+				action.subject = selectedGate
+				statusBar.text = "Click on an item to connect"
+			} else {
+				statusBar.text = "Please select an item first."
+			}
+		}
+		
+		fun delGateInput(btn: JButton) {
+			if (selectedGate != null) {
+				action.setCurrent(action.DEL_INPUT)
+				action.subject = selectedGate
+				statusBar.text = "Click on an item to delete connection"
+			} else {
+				statusBar.text = "Please select an item first."
+			}
+		}
+		
+		fun delGate() {
+			selectedGate?.let { //if (selectedGate != null) ... gives an error because selectedGate is mutable
+				gates.remove(it)
+				for (out in it.outputs)
+					out.inputs.remove(it)
+				statusBar.text = "Item deleted."
+				selectedGate = null
+				repaint()
+			}
+		}
+		
+		inline fun <reified T: Gate> addGate() {
+			
+		}
+	}
+	
+	private inner class Action {
+		val NOTHING = 0
+		val ADD_INPUT = 1
+		val DEL_INPUT = 2
+		val ADD_GATE = 3
+		
+		var current: Int = 0
+			private set
+		
+		fun setCurrent(value: Int) {
+			cursor = Cursor(when (value) {
+				NOTHING -> Cursor.DEFAULT_CURSOR
+				else -> Cursor.HAND_CURSOR
+			})
+			current = value
+		}
+		
+		var subject: Gate? = null
 	}
 }

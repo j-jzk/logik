@@ -4,6 +4,7 @@ import java.awt.Graphics
 
 interface Gate {
 	public val inputs: MutableList<Gate>
+	public val outputs: MutableList<Gate>
 	public fun getOutput(): Boolean
 	
 	public var x: Int

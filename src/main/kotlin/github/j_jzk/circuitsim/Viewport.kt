@@ -18,18 +18,36 @@ import javax.swing.JFileChooser
 import javax.swing.filechooser.FileFilter
 import javax.swing.filechooser.FileNameExtensionFilter
 import java.io.File
+import java.awt.event.KeyListener
+import java.awt.event.KeyEvent
+import javax.swing.KeyStroke
+import javax.swing.AbstractAction
+import java.awt.event.ActionEvent
 
 class Viewport(val statusBar: JLabel): JPanel() {
-	init {
-		val handler = MouseHandler()
-		addMouseListener(handler)
-		addMouseMotionListener(handler)
-	}
-	
 	private var gates = mutableListOf<Gate>()
 	private var selectedGate: Gate? = null
 	private val action = Action()
 	public val toolbar = ToolbarHandler()
+	private var lastSave: File? = null
+	
+	init {
+		val handler = MouseHandler()
+		addMouseListener(handler)
+		addMouseMotionListener(handler)
+		
+		getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control S"), "save")
+		getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control O"), "load")
+		getActionMap().put("save", object : AbstractAction() {
+			override fun actionPerformed(e: ActionEvent) = toolbar.save()
+		})
+		
+		getActionMap().put("load", object : AbstractAction() {
+			override fun actionPerformed(e: ActionEvent) = toolbar.load()
+		})
+	}
+	
+
 	
 	override public fun paintComponent(g: Graphics) {
 		super.paintComponent(g)
@@ -48,7 +66,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		//draw a line if the user is connecting an input
 		if (action.current == action.ADD_INPUT) {
 			g.drawLine(action.x1, action.y1, action.x2, action.y2)
-		}		
+		}
 		
 	}
 	
@@ -77,6 +95,16 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		}
 		
 		return null
+	}
+	
+	fun saveSketch() {
+		try {
+			lastSave?.writeText(Sketch.encode(gates.toTypedArray()))
+			statusBar.text = "File successfully saved."
+		} catch (e: Exception) {
+			statusBar.text = "ERROR SAVING FILE: ${e.message} (see terminal output for details)"
+			e.printStackTrace()
+		}
 	}
 	
 	private inner class MouseHandler: MouseInputAdapter() {
@@ -210,6 +238,11 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		}
 		
 		fun save() {
+			if (lastSave != null) {
+				saveSketch()
+				return
+			}
+			
 			val fileChooser = JFileChooser()
 			fileChooser.dialogTitle = "Specify a save path"
 			fileChooser.setFileFilter(FileNameExtensionFilter("Sketch files (*.lgk)", "lgk"))
@@ -219,16 +252,17 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				var file = fileChooser.getSelectedFile()
 				if (file.extension == "")
 					file = File(file.getPath() + ".lgk")
-				try {
-					file.writeText(Sketch.encode(gates.toTypedArray()))
-					statusBar.text = "File successfully saved."
-				} catch (e: Exception) {
-					statusBar.text = "ERROR SAVING FILE: ${e.message} (see terminal output for details)"
-					e.printStackTrace()
-				}
+				
+				lastSave = file
+				saveSketch()
 			} else {
 				statusBar.text = "Save cancelled."
 			}
+		}
+		
+		fun saveAs() {
+			lastSave = null
+			save()
 		}
 		
 		fun load() {
@@ -241,6 +275,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				val file = fileChooser.getSelectedFile()
 				try {
 					gates = Sketch.decode(file.readText()).toMutableList()
+					lastSave = file
 					statusBar.text = "Sketch loaded successfully."
 				} catch (e: Exception) {
 					statusBar.text = "ERROR LOADING FILE: ${e.message} (see terminal output for details)"

@@ -1,7 +1,6 @@
 package github.j_jzk.circuitsim.gates
 
 import java.awt.Graphics
-import java.awt.Font
 
 class Or(override var x: Int, override var y: Int): Gate {
 	override public val inputs = mutableListOf<Gate>()
@@ -23,8 +22,7 @@ class Or(override var x: Int, override var y: Int): Gate {
 	
 	override public fun onClick() {	}
 	
-	override public fun render(g: Graphics) {		
-		//g.getFont().get
+	override public fun render(g: Graphics) {
 		g.drawString("1", x+5, y+20)
 	}
 }

@@ -2,7 +2,7 @@ package github.j_jzk.circuitsim.gates
 
 import java.awt.Graphics
 
-class And(override var x: Int, override var y: Int): Gate {
+class Xor(override var x: Int, override var y: Int): Gate {
 	override public val inputs = mutableListOf<Gate>()
 	override public val w = 20
 	override public val h = 25
@@ -11,9 +11,9 @@ class And(override var x: Int, override var y: Int): Gate {
 	
 	override public fun getOutput(): Boolean {
 	if (inputs.size > 0) {
-			var result = true
+			var result = false
 			for (input in inputs) {
-				result = result && input.getOutput()
+				result = result xor input.getOutput()
 			}
 			return result
 		} else
@@ -23,6 +23,6 @@ class And(override var x: Int, override var y: Int): Gate {
 	override public fun onClick() {	}
 	
 	override public fun render(g: Graphics) {
-		g.drawString("&", x+5, y+20)
+		g.drawString("X", x+5, y+20)
 	}
 }

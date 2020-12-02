@@ -43,8 +43,10 @@ class Toolbar(val vp: Viewport): JPanel() {
 		addCreateBtn(JButton("Create NOT gate"), { Not(0,0) }, KeyEvent.VK_N)
 		addCreateBtn(JButton("Create AND gate"), { And(0,0) }, KeyEvent.VK_A)
 		addCreateBtn(JButton("Create OR gate"), { Or(0,0) }, KeyEvent.VK_O)
-		
-
+		addCreateBtn(JButton("Create XOR gate"), { Xor(0,0) }, KeyEvent.VK_X)
+		addCreateBtn(JButton("Create NAND gate"), { Nand(0,0) }, KeyEvent.VK_D)
+		addCreateBtn(JButton("Create NOR gate"), { Nor(0,0) }, KeyEvent.VK_R)
+		addCreateBtn(JButton("Create XNOR gate"), { Xnor(0,0) })
 		
 	}
 }

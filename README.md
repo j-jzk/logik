@@ -2,7 +2,6 @@
 A logic circuit simulator written in Kotlin and using Swing.
 
 ## TODO
-- [ ] Selection of multiple elements
 - [ ] Zooming
 - [x] Labels
 - [x] Non-straight connections

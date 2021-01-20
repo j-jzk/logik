@@ -3,7 +3,7 @@ package github.j_jzk.circuitsim.gates
 import java.awt.Graphics
 import java.awt.Color
 
-class Lamp(override var x: Int, override var y: Int): Gate {
+class Lamp: Gate {
 	override public val inputs = mutableListOf<Gate>()
 	override public val w = 25
 	override public val h = 25
@@ -14,7 +14,8 @@ class Lamp(override var x: Int, override var y: Int): Gate {
 	
 	override public fun onClick() {	}
 	
-	override public fun render(g: Graphics) {		
+	override public fun render(g: Graphics) {
+		g.drawRect(x, y, w, h)	
 		if (getOutput() == true)
 			g.color = Color.YELLOW
 		else
@@ -26,4 +27,7 @@ class Lamp(override var x: Int, override var y: Int): Gate {
 		g.drawLine(x, y, x+w, y+h)
 		g.drawLine(x+w, y, x, y+h)
 	}
+	
+	constructor(s: String) : super(s)
+	constructor(x: Int, y: Int) : super(x, y)
 }

@@ -2,15 +2,34 @@ package github.j_jzk.circuitsim.gates
 
 import java.awt.Graphics
 
-interface Gate {
-	public val inputs: MutableList<Gate>
-	public val outputs: MutableList<Gate>
-	public fun getOutput(): Boolean
+abstract class Gate {
+	open public val inputs: MutableList<Gate> = mutableListOf<Gate>()
+	open public val outputs: MutableList<Gate> = mutableListOf<Gate>()
+	abstract public fun getOutput(): Boolean
 	
-	public var x: Int
-	public var y: Int
-	public val w: Int
-	public val h: Int
-	public fun onClick()
-	public fun render(g: Graphics)
+	open public var x: Int = 0
+	open public var y: Int = 0
+	abstract public val w: Int
+	abstract public val h: Int
+	abstract public fun render(g: Graphics)
+	
+	open public fun onClick() { }
+	open public fun onDelete() { }
+	open public fun onConnectInput() { }
+	open public fun onConnectOutput() { }
+	open public fun onCreate() { }
+	
+	override public fun toString() = "${this.javaClass.getSimpleName()} $x $y"
+	
+	public constructor(x: Int, y: Int) {
+		this.x = x
+		this.y = y
+	}
+	
+	public constructor(s: String) {
+		val (x_, y_) = s.split(' ').map { it.toInt() }
+		x = x_
+		y = y_
+	}
+	
 }

@@ -55,6 +55,7 @@ class Toolbar(val vp: Viewport): JPanel() {
 		
 		addCreateBtn(JButton("Create input node"), { Switch(0,0) })
 		addCreateBtn(JButton("Create output node"), { Lamp(0,0) })
+		addCreateBtn(JButton("Create label"), { Label(0, 0) })
 		addCreateBtn(JButton("Create NOT gate"), { Not(0,0) }, KeyEvent.VK_N)
 		addCreateBtn(JButton("Create AND gate"), { And(0,0) }, KeyEvent.VK_A)
 		addCreateBtn(JButton("Create OR gate"), { Or(0,0) }, KeyEvent.VK_O)

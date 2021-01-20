@@ -77,7 +77,6 @@ class Viewport(val statusBar: JLabel): JPanel() {
 	
 	private fun renderGate(gate: Gate, gr: Graphics) {
 		gr.color = Color.BLACK
-		gr.drawRect(gate.x, gate.y, gate.w, gate.h)
 		gate.render(gr)
 		
 		for (input in gate.inputs) {
@@ -131,6 +130,8 @@ class Viewport(val statusBar: JLabel): JPanel() {
 					action.ADD_INPUT -> if (gate != null && action.subject !== gate) {
 							action.subject?.inputs?.add(gate)
 							action.subject?.let { gate.outputs.add(it) }
+							gate.onConnectOutput()
+							action.subject?.onConnectInput()
 							action.x1 = 0; action.x2 = 0; action.y1 = 0; action.y2 = 0
 							repaint()
 						}
@@ -146,6 +147,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 						it.x = e.x
 						it.y = e.y
 						gates.add(it)
+						it.onCreate()
 					}
 				}
 				
@@ -234,6 +236,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				gates.remove(it)
 				for (out in it.outputs)
 					out.inputs.remove(it)
+				it.onDelete()
 				statusBar.text = "Item deleted."
 				selectedGate = null
 				repaint()

@@ -13,7 +13,7 @@ object Sketch {
 		}
 		
 		for ((i, node) in nodes.withIndex()) {
-			nodesStr += node.javaClass.getSimpleName() + " ${node.x} ${node.y}\n"     // ...
+			nodesStr += node.toString() + "\n"                                        // ...
 			for (input in node.inputs) {                                              //  |
 				connectionsStr += "$i ${indices[input]}\n"             // <-----here------+
 			}
@@ -29,21 +29,22 @@ object Sketch {
 		for ((i, nodeStr) in nodesStr.lines().withIndex()) {
 			if (nodeStr == "") continue
 			
-			val (type, xS, yS) = nodeStr.split(" ")
+			val (type, properties) = nodeStr.split(" ", limit=2)
 			val node: Gate = when(type) {
-				"And" -> And(0,0)
-				"Lamp" -> Lamp(0,0)
-				"Nand" -> Nand(0,0)
-				"Nor" -> Nor(0,0)
-				"Not" -> Not(0,0)
-				"Or" -> Or(0,0)
-				"Switch" -> Switch(0,0)
-				"Xnor" -> Xnor(0,0)
-				"Xor" -> Xor(0,0)
+				"And" -> And(properties)
+				"Lamp" -> Lamp(properties)
+				"Nand" -> Nand(properties)
+				"Nor" -> Nor(properties)
+				"Not" -> Not(properties)
+				"Or" -> Or(properties)
+				"Switch" -> Switch(properties)
+				"Xnor" -> Xnor(properties)
+				"Xor" -> Xor(properties)
+				"Label" -> Label(properties)
 				else -> throw Exception("Invalid gate $type")
 			}
-			node.x = xS.toInt()
-			node.y = yS.toInt()
+			/*node.x = xS.toInt()
+			node.y = yS.toInt()*/
 			
 			nodes[i] = node
 		}

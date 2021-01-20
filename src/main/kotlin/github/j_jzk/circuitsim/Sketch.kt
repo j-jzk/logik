@@ -41,6 +41,7 @@ object Sketch {
 				"Xnor" -> Xnor(properties)
 				"Xor" -> Xor(properties)
 				"Label" -> Label(properties)
+				"ConnectionMidpoint" -> ConnectionMidpoint(properties)
 				else -> throw Exception("Invalid gate $type")
 			}
 			/*node.x = xS.toInt()

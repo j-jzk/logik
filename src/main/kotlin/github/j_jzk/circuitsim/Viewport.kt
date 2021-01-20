@@ -3,6 +3,7 @@ package github.j_jzk.circuitsim
 import github.j_jzk.circuitsim.gates.Gate
 import github.j_jzk.circuitsim.gates.Switch
 import github.j_jzk.circuitsim.gates.Lamp
+import github.j_jzk.circuitsim.gates.ConnectionMidpoint
 import github.j_jzk.circuitsim.Sketch
 import java.awt.Color
 import java.awt.Graphics
@@ -116,7 +117,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		
 		override fun mouseClicked(e: MouseEvent) {
 			val gate = getGateAt(e.x, e.y)
-			if (e.getButton() == MouseEvent.BUTTON1) {
+			if (e.getButton() == MouseEvent.BUTTON1) { //left button
 							
 				when (action.current) {
 					action.NOTHING -> if (gate != null) {
@@ -154,10 +155,23 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				action.setCurrent(action.NOTHING)
 				statusBar.text = ""
 				dragged = false
-			} else if (e.getButton() == MouseEvent.BUTTON3) {
+			} else if (e.getButton() == MouseEvent.BUTTON3) { //right button
 				if (gate != null) {
 					selectedGate = gate
 					toolbar.addGateInput()
+				}
+			} else if (e.getButton() == MouseEvent.BUTTON2) { //middle button
+				if (action.current == action.ADD_INPUT && action.subject != null) {
+					//add a connection midpoint
+					val midpoint = ConnectionMidpoint(e.x, e.y)
+					action.subject?.let {
+						midpoint.outputs.add(it)
+						it.inputs.add(midpoint)
+						it.onConnectInput()
+					}
+					
+					action.subject = midpoint
+					gates.add(midpoint)
 				}
 			}
 		}
@@ -215,7 +229,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			if (selectedGate != null) {
 				action.setCurrent(action.ADD_INPUT)
 				action.subject = selectedGate
-				statusBar.text = "Click on an item to connect"
+				statusBar.text = "Click on an item to connect. Press the middle mouse button to add a midpoint."
 			} else {
 				statusBar.text = "Please select an item first."
 			}

@@ -6,5 +6,5 @@ A logic circuit simulator written in Kotlin and using Swing.
 - [x] Labels
 - [x] Non-straight connections
 - [x] Separate logic from GUI
-- [ ] Selection of multiple items
+- [x] Selection of multiple items
 - [ ] Copy/paste

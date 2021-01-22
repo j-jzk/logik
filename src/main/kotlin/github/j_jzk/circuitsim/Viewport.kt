@@ -34,7 +34,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 	public val toolbar = ToolbarHandler()
 	private var lastSave: File? = null
 	
-	private val selectedGates = mutableSetOf<Gate>() //used in case multiple gates are selected
+	private val selectedGates = mutableSetOf<Gate>()
 	
 	init {
 		val handler = MouseHandler()
@@ -102,7 +102,8 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			gr.drawLine(input.x+input.w, input.y + input.h/2, gate.x, gate.y + gate.h/2)
 		}
 	}
-	
+
+	/** returns a gate at given coordinates */	
 	private fun getGateAt(x: Int, y: Int): Gate? {
 		for (gate in gates) {
 			if (x >= gate.x && y >= gate.y && x <= gate.x + gate.w && y <= gate.y + gate.h)
@@ -139,11 +140,12 @@ class Viewport(val statusBar: JLabel): JPanel() {
 	}
 	
 	private inner class MouseHandler: MouseInputAdapter() {
-		private var dragged = false //if the mouse has been dragged
 		
 		override fun mouseClicked(e: MouseEvent) {
 			val gate = getGateAt(e.x, e.y)
 			
+			//if the user clicked on a gate and shift is not down, clear the selection
+			// and select only the gate the user clicked on
 			if (gate != null && !e.isShiftDown()) {
 				selectedGates.removeAll() {true}
 				selectedGates.add(gate)
@@ -160,7 +162,12 @@ class Viewport(val statusBar: JLabel): JPanel() {
 							selectedGates.removeAll() {true}
 							repaint()
 						}
-					action.ADD_INPUT -> if (gate != null && action.subject !== gate) {
+					action.ADD_INPUT ->
+						//the user wants to add an input to a gate
+						if (gate != null && action.subject !== gate) {
+							//if the user clicked on a gate and it isn't the one he
+							// wants to add an input to
+							
 							action.subject?.inputs?.add(gate)
 							action.subject?.let { gate.outputs.add(it) }
 							gate.onConnectOutput()
@@ -170,13 +177,14 @@ class Viewport(val statusBar: JLabel): JPanel() {
 							repaint()
 						}
 				
-					action.DEL_INPUT -> if (gate != null) {
-						action.subject?.let {
-							it.inputs.remove(gate)
-							gate.outputs.remove(it)
-							it.updateValue()
+					action.DEL_INPUT -> //remove an input from a gate
+						if (gate != null) {
+							action.subject?.let {
+								it.inputs.remove(gate)
+								gate.outputs.remove(it)
+								it.updateValue()
+							}
 						}
-					}
 					
 					action.ADD_GATE -> action.subject?.let {
 						it.x = e.x
@@ -192,6 +200,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				//dragged = false
 			} else if (e.getButton() == MouseEvent.BUTTON3) { //right button
 				if (gate != null) {
+					//the user wants to add an input to a gate
 					selectedGates.removeAll() {true}
 					selectedGates.add(gate)
 					toolbar.addGateInput()
@@ -214,11 +223,13 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		
 		override fun mouseMoved(e: MouseEvent) {
 			if (action.current == action.ADD_INPUT) {
+				//the user is connecting an input
 				action.subject?.let {
 					action.x1 = it.x
 					action.y1 = it.y + it.h/2
 				}
-
+				
+				//values for the paint function
 				action.x2 = e.x
 				action.y2 = e.y
 				
@@ -245,17 +256,20 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				
 			}
 			
+			//values for the paint function
 			action.x1 = e.x
 			action.y1 = e.y
 		}
 		
 		override fun mouseDragged(e: MouseEvent) {
+			//set the right mode
 			if (action.current != action.SELECTING && action.current != action.MOVING)
 				action.setCurrent(action.MOVING)
 			if (e.isShiftDown() && action.current != action.SELECTING)
 				action.setCurrent(action.SELECTING)
 			
 			if (action.current == action.MOVING) {
+				//move the gates
 				for (it in selectedGates) {
 					it.x += e.x - action.x1
 					it.y += e.y - action.y1
@@ -264,6 +278,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				action.x1 = e.x
 				action.y1 = e.y
 			} else if (action.current == action.SELECTING) {
+				//set the coordinates of the selection box
 				action.x2 = e.x
 				action.y2 = e.y
 			}
@@ -272,12 +287,11 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		
 		override fun mouseReleased(e: MouseEvent) {
 			if (action.current == action.MOVING) {
-				
+				//reset
 				action.setCurrent(action.NOTHING)
 				repaint()
-				
-				//dragged = false //reset	
 			} else if (action.current == action.SELECTING) {
+				//add the gates in the selection box to the set of selected gates
 				val justSelected = getGatesInRect(
 					min(action.x1, action.x2), min(action.y1, action.y2),
 					max(action.x1, action.x2), max(action.y1, action.y2)
@@ -315,6 +329,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		
 		fun delGate() {
 			for (it in selectedGates) {
+				//remove the gate and update various triggers
 				gates.remove(it)
 				for (out in it.outputs) {
 					out.inputs.remove(it)
@@ -322,9 +337,12 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				}
 				it.onDelete()
 				statusBar.text = "Item deleted."
-				repaint()
 			}
+			
+			//clear the selection
 			selectedGates.removeAll() {true}
+			
+			repaint()
 		}
 		
 		fun addGate(gate: Gate) {
@@ -334,11 +352,13 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		}
 		
 		fun save() {
+			//if the last save location is known, save there
 			if (lastSave != null) {
 				saveSketch()
 				return
 			}
 			
+			//otherwise show a file chooser
 			val fileChooser = JFileChooser()
 			fileChooser.dialogTitle = "Specify a save path"
 			fileChooser.setFileFilter(FileNameExtensionFilter("Sketch files (*.lgk)", "lgk"))
@@ -346,6 +366,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			
 			if (result == JFileChooser.APPROVE_OPTION) { //the user didn't cancel the file save
 				var file = fileChooser.getSelectedFile()
+				//automatically add a .lgk extension if the user didn't specify it
 				if (file.extension == "")
 					file = File(file.getPath() + ".lgk")
 				
@@ -357,6 +378,8 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		}
 		
 		fun saveAs() {
+			//reset the last save location and proceed as if
+			// regular "Save" was pressed
 			lastSave = null
 			save()
 		}
@@ -385,11 +408,11 @@ class Viewport(val statusBar: JLabel): JPanel() {
 	
 	private inner class Action {
 		val NOTHING = 0
-		val ADD_INPUT = 1
-		val DEL_INPUT = 2
-		val ADD_GATE = 3
-		val MOVING = 4
-		val SELECTING = 5
+		val ADD_INPUT = 1 //the user is adding an input to a gate
+		val DEL_INPUT = 2 //the user wants to delete an input from a gate
+		val ADD_GATE = 3  //the user wants to add a new gate to the sketch
+		val MOVING = 4    //the user is moving the selected gates
+		val SELECTING = 5 //the user is doing a box selection (shift+drag)
 		
 		var current: Int = 0
 			private set
@@ -406,7 +429,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		
 		var subject: Gate? = null
 		
-		//connection line or selection box
+		//coordinates for drawing various things, such as connection lines and selection boxes
 		var x1 = 0
 		var y1 = 0
 		var x2 = 0

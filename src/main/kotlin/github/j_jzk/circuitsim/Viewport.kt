@@ -15,6 +15,7 @@ import javax.swing.JButton
 import javax.swing.JLabel
 import kotlin.math.abs
 import kotlin.math.min
+import kotlin.math.max
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileFilter
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -29,10 +30,12 @@ import java.awt.Graphics2D
 
 class Viewport(val statusBar: JLabel): JPanel() {
 	private var gates = mutableListOf<Gate>()
-	private var selectedGate: Gate? = null
 	private val action = Action()
 	public val toolbar = ToolbarHandler()
 	private var lastSave: File? = null
+	
+	//private var selectedGate: Gate? = null //used in case one gate is selected
+	private val selectedGates = mutableListOf<Gate>() //used in case multiple gates are selected
 	
 	init {
 		val handler = MouseHandler()
@@ -62,16 +65,24 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			renderGate(gate, g)
 		}
 		
-		//draw a blue box around the selected node
-		selectedGate?.let { // if (selectedGate != null)
-			g.setColor(Color.BLUE)
+		//draw a blue box around the selected nodes
+		g.setColor(Color.BLUE)
+		for (it in selectedGates) {
 			g.drawRect(it.x-1, it.y-1, it.w+2, it.h+2)
-			g.setColor(Color.BLACK)
 		}
+		g.setColor(Color.BLACK)
 		
 		//draw a line if the user is connecting an input
 		if (action.current == action.ADD_INPUT) {
 			g.drawLine(action.x1, action.y1, action.x2, action.y2)
+		} else if (action.current == action.SELECTING) {
+			//draw a box if the user is selecting multiple items (with shift)
+			g.setColor(Color.BLUE)
+			g.drawRect(
+				min(action.x1, action.x2), min(action.y1, action.y2),
+				abs(action.x2 - action.x1), abs(action.y2 - action.y1)
+			)
+			g.setColor(Color.BLACK)
 		}
 		
 	}
@@ -102,6 +113,22 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		return null
 	}
 	
+	/**
+	 * returns a list of gates in a given rectangle. x1 < x2 and y1 < y2
+	 */
+	private fun getGatesInRect(x1: Int, y1: Int, x2: Int, y2: Int): List<Gate> {
+		val gatesInRect = mutableListOf<Gate>()
+		
+		for (gate in gates) {
+			if (gate.x >= x1 && gate.x <= x2
+				&& gate.y >= y1 && gate.y <= y2) {
+				gatesInRect.add(gate)
+			}
+		}
+		
+		return gatesInRect.toList()
+	}
+	
 	fun saveSketch() {
 		try {
 			lastSave?.writeText(Sketch.encode(gates.toTypedArray()))
@@ -117,15 +144,21 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		
 		override fun mouseClicked(e: MouseEvent) {
 			val gate = getGateAt(e.x, e.y)
+			
+			if (gate != null && !e.isShiftDown()) {
+				selectedGates.removeAll() {true}
+				selectedGates.add(gate)
+			}
+			
 			if (e.getButton() == MouseEvent.BUTTON1) { //left button
-							
+				
 				when (action.current) {
 					action.NOTHING -> if (gate != null) {
 							gate.onClick()
 							repaint()
 						} else {
 							//deselect
-							selectedGate = null
+							selectedGates.removeAll() {true}
 							repaint()
 						}
 					action.ADD_INPUT -> if (gate != null && action.subject !== gate) {
@@ -157,10 +190,11 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				
 				action.setCurrent(action.NOTHING)
 				statusBar.text = ""
-				dragged = false
+				//dragged = false
 			} else if (e.getButton() == MouseEvent.BUTTON3) { //right button
 				if (gate != null) {
-					selectedGate = gate
+					selectedGates.removeAll() {true}
+					selectedGates.add(gate)
 					toolbar.addGateInput()
 				}
 			} else if (e.getButton() == MouseEvent.BUTTON2) { //middle button
@@ -198,40 +232,77 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		}
 		
 		override fun mousePressed(e: MouseEvent) {
-			if (e.getButton() == MouseEvent.BUTTON1)
-				selectedGate = getGateAt(e.x, e.y)
-			else
-				selectedGate = null
+			if (e.getButton() == MouseEvent.BUTTON1) {
+				val gate = getGateAt(e.x, e.y)
+				if (gate != null) {
+					//if the gate has already been selected, assume that the user
+					// wants to move the selected gates and don't clear the selection;
+					// if shift is down assume the user wants to add a gate to the
+					// selection - don't clear it
+					// otherwise do
+					if (!(gate in selectedGates) && !e.isShiftDown())
+						selectedGates.removeAll() {true}
+					
+					selectedGates.add(gate)
+				} else
+					selectedGates.removeAll() {true}
+					
+				
+			}
+			
+			action.x1 = e.x
+			action.y1 = e.y
 		}
 		
 		override fun mouseDragged(e: MouseEvent) {
-			dragged = true
-			selectedGate?.let {
-				it.x = e.x - it.w / 2
-				it.y = e.y - it.h / 2
+			if (action.current != action.SELECTING && action.current != action.MOVING)
+				action.setCurrent(action.MOVING)
+			if (e.isShiftDown() && action.current != action.SELECTING)
+				action.setCurrent(action.SELECTING)
+			
+			if (action.current == action.MOVING) {
+				for (it in selectedGates) {
+					it.x = e.x - it.w / 2
+					it.y = e.y - it.h / 2
+				}
+			} else if (action.current == action.SELECTING) {
+				action.x2 = e.x
+				action.y2 = e.y
 			}
 			repaint()
 		}
 		
 		override fun mouseReleased(e: MouseEvent) {
-			if (dragged) {
-				selectedGate?.let {
+			if (action.current == action.MOVING) {
+				for (it in selectedGates) {
 					it.x = e.x - it.w / 2
 					it.y = e.y - it.h / 2
 				}
-			
+				
+				action.setCurrent(action.NOTHING)
 				repaint()
 				
-				dragged = false //reset	
+				//dragged = false //reset	
+			} else if (action.current == action.SELECTING) {
+				val justSelected = getGatesInRect(
+					min(action.x1, action.x2), min(action.y1, action.y2),
+					max(action.x1, action.x2), max(action.y1, action.y2)
+				)
+				selectedGates.addAll(justSelected)
+				action.setCurrent(action.NOTHING)
+				
+				repaint()
 			}
+			
+			
 		}
 	}
 	
 	public inner class ToolbarHandler {
 		fun addGateInput() {
-			if (selectedGate != null) {
+			if (selectedGates.size > 0) {
 				action.setCurrent(action.ADD_INPUT)
-				action.subject = selectedGate
+				action.subject = selectedGates.first()
 				statusBar.text = "Click on an item to connect. Press the middle mouse button to add a midpoint."
 			} else {
 				statusBar.text = "Please select an item first."
@@ -239,9 +310,9 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		}
 		
 		fun delGateInput() {
-			if (selectedGate != null) {
+			if (selectedGates.size > 0) {
 				action.setCurrent(action.DEL_INPUT)
-				action.subject = selectedGate
+				action.subject = selectedGates.first()
 				statusBar.text = "Click on an item to delete connection"
 			} else {
 				statusBar.text = "Please select an item first."
@@ -249,7 +320,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		}
 		
 		fun delGate() {
-			selectedGate?.let { //if (selectedGate != null) ... gives an error because selectedGate is mutable
+			for (it in selectedGates) {
 				gates.remove(it)
 				for (out in it.outputs) {
 					out.inputs.remove(it)
@@ -257,9 +328,9 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				}
 				it.onDelete()
 				statusBar.text = "Item deleted."
-				selectedGate = null
 				repaint()
 			}
+			selectedGates.removeAll() {true}
 		}
 		
 		fun addGate(gate: Gate) {
@@ -323,6 +394,8 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		val ADD_INPUT = 1
 		val DEL_INPUT = 2
 		val ADD_GATE = 3
+		val MOVING = 4
+		val SELECTING = 5
 		
 		var current: Int = 0
 			private set
@@ -330,6 +403,8 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		fun setCurrent(value: Int) {
 			cursor = Cursor(when (value) {
 				NOTHING -> Cursor.DEFAULT_CURSOR
+				MOVING -> Cursor.MOVE_CURSOR
+				SELECTING -> Cursor.CROSSHAIR_CURSOR
 				else -> Cursor.HAND_CURSOR
 			})
 			current = value
@@ -337,7 +412,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		
 		var subject: Gate? = null
 		
-		//connection line
+		//connection line or selection box
 		var x1 = 0
 		var y1 = 0
 		var x2 = 0

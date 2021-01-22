@@ -10,13 +10,19 @@ class Lamp: Gate {
 	override public val outputs = mutableListOf<Gate>()
 	
 	
-	override public fun getOutput() = if (inputs.size > 0) inputs[0].getOutput() else false
+	override public fun updateValue() {
+		value = if (inputs.size > 0) inputs[0].value else false
+				
+		for (output in outputs) {
+			output.updateValue()
+		}
+	}
 	
 	override public fun onClick() {	}
 	
 	override public fun render(g: Graphics) {
 		g.drawRect(x, y, w, h)	
-		if (getOutput() == true)
+		if (value == true)
 			g.color = Color.YELLOW
 		else
 			g.color = Color.BLACK

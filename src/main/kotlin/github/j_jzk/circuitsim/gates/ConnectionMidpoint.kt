@@ -7,7 +7,13 @@ class ConnectionMidpoint: Gate {
 	override public val w = 4
 	override public val h = 4
 
-	override public fun getOutput() = if (inputs.size > 0) inputs[0].getOutput() else false
+	override public fun updateValue() {
+		value = if (inputs.size > 0) inputs[0].value else false
+				
+		for (output in outputs) {
+			output.updateValue()
+		}
+	}
 	
 	override public fun render(g: Graphics) {
 		g.drawRect(x, y, w, h)

@@ -28,7 +28,7 @@ class Label: Inconnectable {
 		g.drawString(text, x+2, y+14)
 	}
 	
-	override public fun getOutput() = false
+	override public fun updateValue() {}
 	
 	override public fun toString(): String = this.javaClass.simpleName + " $x $y $text"
 	

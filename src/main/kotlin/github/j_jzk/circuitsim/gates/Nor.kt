@@ -9,15 +9,19 @@ class Nor: Gate {
 	override public val outputs = mutableListOf<Gate>()
 	
 	
-	override public fun getOutput(): Boolean {
+	override public fun updateValue() {
 	if (inputs.size > 0) {
 			var result = false
 			for (input in inputs) {
-				result = result || input.getOutput()
+				result = result || input.value
 			}
-			return !result
+			value = !result
 		} else
-			return false
+			value = false
+				
+		for (output in outputs) {
+			output.updateValue()
+		}
 	}
 	
 	override public fun onClick() {	}

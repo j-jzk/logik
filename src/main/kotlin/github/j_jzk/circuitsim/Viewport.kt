@@ -84,7 +84,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			//for every input of the logic gate, we draw a line from the center of the input's
 			//right side to the center of the gate's left side. the color is set according to the
 			//logic value of the input.
-			if (input.getOutput() == true)
+			if (input.value == true)
 				gr.color = Color.RED
 			else
 				gr.color = Color.BLACK
@@ -133,6 +133,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 							action.subject?.let { gate.outputs.add(it) }
 							gate.onConnectOutput()
 							action.subject?.onConnectInput()
+							action.subject?.updateValue()
 							action.x1 = 0; action.x2 = 0; action.y1 = 0; action.y2 = 0
 							repaint()
 						}
@@ -141,6 +142,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 						action.subject?.let {
 							it.inputs.remove(gate)
 							gate.outputs.remove(it)
+							it.updateValue()
 						}
 					}
 					
@@ -149,6 +151,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 						it.y = e.y
 						gates.add(it)
 						it.onCreate()
+						it.updateValue()
 					}
 				}
 				
@@ -248,8 +251,10 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		fun delGate() {
 			selectedGate?.let { //if (selectedGate != null) ... gives an error because selectedGate is mutable
 				gates.remove(it)
-				for (out in it.outputs)
+				for (out in it.outputs) {
 					out.inputs.remove(it)
+					out.updateValue()
+				}
 				it.onDelete()
 				statusBar.text = "Item deleted."
 				selectedGate = null

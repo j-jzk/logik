@@ -5,7 +5,8 @@ import java.awt.Graphics
 abstract class Gate {
 	open public val inputs: MutableList<Gate> = mutableListOf<Gate>()
 	open public val outputs: MutableList<Gate> = mutableListOf<Gate>()
-	abstract public fun getOutput(): Boolean
+	abstract public fun updateValue()
+	public var value: Boolean = false
 	
 	open public var x: Int = 0
 	open public var y: Int = 0

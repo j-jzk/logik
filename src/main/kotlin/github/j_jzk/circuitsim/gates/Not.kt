@@ -10,7 +10,13 @@ class Not: Gate {
 	override public val outputs = mutableListOf<Gate>()
 	
 	
-	override public fun getOutput() = if (inputs.size > 0) !inputs[0].getOutput() else true
+	override public fun updateValue() {
+		value = if (inputs.size > 0) !inputs[0].value else true
+				
+		for (output in outputs) {
+			output.updateValue()
+		}
+	}
 	
 	override public fun onClick() {	}
 	

@@ -9,17 +9,21 @@ class Switch: Gate {
 	override public val h = 25
 	override public val outputs = mutableListOf<Gate>()
 	
-	private var state = false
+//	private var state = false
 	
-	override public fun getOutput() = state
+	override public fun updateValue() {}
 	
 	override public fun onClick() {
-		state = !state
+		value = !value
+				
+		for (output in outputs) {
+			output.updateValue()
+		}
 	}
 	
 	override public fun render(g: Graphics) {
 		g.drawRect(x, y, w, h)	
-		if (state) {
+		if (value) {
 			g.color = Color.RED
 			g.fillRect(x+1, y+1, w-1, h-1)
 			g.color = Color.BLACK
@@ -30,9 +34,9 @@ class Switch: Gate {
 		val (x_, y_, state_) = s.split(' ')
 		x = x_.toInt()
 		y = y_.toInt()
-		state = state_ == "1"
+		value = state_ == "1"
 	}
 	constructor(x: Int, y: Int) : super(x, y)
 	
-	override fun toString() = this.javaClass.simpleName + " $x $y " + if (state) "1" else "0"
+	override fun toString() = this.javaClass.simpleName + " $x $y " + if (value) "1" else "0"
 }

@@ -34,8 +34,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 	public val toolbar = ToolbarHandler()
 	private var lastSave: File? = null
 	
-	//private var selectedGate: Gate? = null //used in case one gate is selected
-	private val selectedGates = mutableListOf<Gate>() //used in case multiple gates are selected
+	private val selectedGates = mutableSetOf<Gate>() //used in case multiple gates are selected
 	
 	init {
 		val handler = MouseHandler()
@@ -223,10 +222,6 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				action.x2 = e.x
 				action.y2 = e.y
 				
-				/*repaint(min(action.x1, action.x2) - 20,
-					min(action.y1, action.y2) - 20,
-					abs(action.x1 - action.x2) + 20,
-					abs(action.y1 - action.y2) + 20)*/
 				repaint()
 			}
 		}
@@ -262,9 +257,12 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			
 			if (action.current == action.MOVING) {
 				for (it in selectedGates) {
-					it.x = e.x - it.w / 2
-					it.y = e.y - it.h / 2
+					it.x += e.x - action.x1
+					it.y += e.y - action.y1
 				}
+				
+				action.x1 = e.x
+				action.y1 = e.y
 			} else if (action.current == action.SELECTING) {
 				action.x2 = e.x
 				action.y2 = e.y
@@ -274,10 +272,6 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		
 		override fun mouseReleased(e: MouseEvent) {
 			if (action.current == action.MOVING) {
-				for (it in selectedGates) {
-					it.x = e.x - it.w / 2
-					it.y = e.y - it.h / 2
-				}
 				
 				action.setCurrent(action.NOTHING)
 				repaint()

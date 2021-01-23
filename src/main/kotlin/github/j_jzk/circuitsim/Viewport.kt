@@ -27,6 +27,7 @@ import javax.swing.AbstractAction
 import java.awt.event.ActionEvent
 import java.awt.RenderingHints
 import java.awt.Graphics2D
+import java.awt.event.MouseWheelEvent
 
 class Viewport(val statusBar: JLabel): JPanel() {
 	private var gates = mutableListOf<Gate>()
@@ -36,10 +37,15 @@ class Viewport(val statusBar: JLabel): JPanel() {
 	
 	private val selectedGates = mutableSetOf<Gate>()
 	
+	public var zoom: Double = 1.0
+	private val pan = Pair<Int, Int>(0, 0)
+	
+	//initiate various listeners
 	init {
 		val handler = MouseHandler()
 		addMouseListener(handler)
 		addMouseMotionListener(handler)
+		addMouseWheelListener(handler)
 		
 		getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control S"), "save")
 		getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control O"), "load")
@@ -55,10 +61,18 @@ class Viewport(val statusBar: JLabel): JPanel() {
 
 	
 	override public fun paintComponent(g: Graphics) {
-		if (g is Graphics2D)
-			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		if (g is Graphics2D) {
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+			
+		}
 		
 		super.paintComponent(g)
+		
+		//zoom and pan
+		if (g is Graphics2D) {
+			g.scale(zoom, zoom)
+			g.translate(pan.first, pan.second)
+		}
 		
 		for (gate in gates) {
 			renderGate(gate, g)
@@ -129,6 +143,9 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		return gatesInRect.toList()
 	}
 	
+	/** computes the "real" coordinates from the ones on the screen (taking into account the zoom and pan) */
+	private fun getRealCoords(x: Int, y: Int) = Pair((x/zoom - pan.first).toInt(), (y/zoom - pan.second).toInt())
+	
 	fun saveSketch() {
 		try {
 			lastSave?.writeText(Sketch.encode(gates.toTypedArray()))
@@ -142,9 +159,10 @@ class Viewport(val statusBar: JLabel): JPanel() {
 	private inner class MouseHandler: MouseInputAdapter() {
 		
 		override fun mouseClicked(e: MouseEvent) {
-			val gate = getGateAt(e.x, e.y)
+			val (x, y) = getRealCoords(e.x, e.y)
+			val gate = getGateAt(x, y)
 			
-			//if the user clicked on a gate and shift is not down, clear the selection
+			//if the user clicked on a gate while shift is not down, clear the selection
 			// and select only the gate the user clicked on
 			if (gate != null && !e.isShiftDown()) {
 				selectedGates.removeAll() {true}
@@ -187,8 +205,8 @@ class Viewport(val statusBar: JLabel): JPanel() {
 						}
 					
 					action.ADD_GATE -> action.subject?.let {
-						it.x = e.x
-						it.y = e.y
+						it.x = x
+						it.y = y
 						gates.add(it)
 						it.onCreate()
 						it.updateValue()
@@ -208,7 +226,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			} else if (e.getButton() == MouseEvent.BUTTON2) { //middle button
 				if (action.current == action.ADD_INPUT && action.subject != null) {
 					//add a connection midpoint
-					val midpoint = ConnectionMidpoint(e.x, e.y)
+					val midpoint = ConnectionMidpoint(x, y)
 					action.subject?.let {
 						midpoint.outputs.add(it)
 						it.inputs.add(midpoint)
@@ -230,16 +248,19 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				}
 				
 				//values for the paint function
-				action.x2 = e.x
-				action.y2 = e.y
+				val (x, y) = getRealCoords(e.x, e.y)
+				action.x2 = x
+				action.y2 = y
 				
 				repaint()
 			}
 		}
 		
 		override fun mousePressed(e: MouseEvent) {
+			val (x, y) = getRealCoords(e.x, e.y)
+			
 			if (e.getButton() == MouseEvent.BUTTON1) {
-				val gate = getGateAt(e.x, e.y)
+				val gate = getGateAt(x, y)
 				if (gate != null) {
 					//if the gate has already been selected, assume that the user
 					// wants to move the selected gates and don't clear the selection;
@@ -257,8 +278,8 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			}
 			
 			//values for the paint function
-			action.x1 = e.x
-			action.y1 = e.y
+			action.x1 = x
+			action.y1 = y
 		}
 		
 		override fun mouseDragged(e: MouseEvent) {
@@ -268,19 +289,21 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			if (e.isShiftDown() && action.current != action.SELECTING)
 				action.setCurrent(action.SELECTING)
 			
+			val (x, y) = getRealCoords(e.x, e.y)
+			
 			if (action.current == action.MOVING) {
 				//move the gates
 				for (it in selectedGates) {
-					it.x += e.x - action.x1
-					it.y += e.y - action.y1
+					it.x += x - action.x1
+					it.y += y - action.y1
 				}
 				
-				action.x1 = e.x
-				action.y1 = e.y
+				action.x1 = x
+				action.y1 = y
 			} else if (action.current == action.SELECTING) {
 				//set the coordinates of the selection box
-				action.x2 = e.x
-				action.y2 = e.y
+				action.x2 = x
+				action.y2 = y
 			}
 			repaint()
 		}
@@ -300,9 +323,11 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				action.setCurrent(action.NOTHING)
 				
 				repaint()
-			}
-			
-			
+			}	
+		}
+		
+		override fun mouseWheelMoved(e: MouseWheelEvent) {
+			toolbar.zoom(e.wheelRotation)
 		}
 	}
 	
@@ -403,6 +428,15 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				
 				repaint()
 			}
+		}
+		
+		fun zoom(amount: Int, factor: Double = 1.1) {
+			if (amount > 0)
+				zoom /= amount * factor
+			else
+				zoom *= amount * -factor
+			
+			repaint()
 		}
 	}
 	

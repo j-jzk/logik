@@ -64,5 +64,20 @@ class Toolbar(val vp: Viewport): JPanel() {
 		addCreateBtn(JButton("Create NOR gate"), { Nor(0,0) }, KeyEvent.VK_R)
 		addCreateBtn(JButton("Create XNOR gate"), { Xnor(0,0) })
 		
+		add(JLabel("View"))
+		space()
+		val zoomInBtn = JButton("Zoom in (wheel up)")
+			zoomInBtn.addActionListener(ActionListener { vp.toolbar.zoom(-1, factor=1.2) })
+			add(zoomInBtn)
+			space()
+		val zoomOutBtn = JButton("Zoom in (wheel up)")
+			zoomOutBtn.addActionListener(ActionListener { vp.toolbar.zoom(1, factor=1.2) })
+			add(zoomOutBtn)
+			space()
+		val zoomDefaultBtn = JButton("Zoom to default size")
+			zoomDefaultBtn.addActionListener(ActionListener { vp.zoom = 1.0; vp.repaint() })
+			add(zoomDefaultBtn)
+			space()
+		
 	}
 }

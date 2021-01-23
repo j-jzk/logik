@@ -38,7 +38,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 	private val selectedGates = mutableSetOf<Gate>()
 	
 	public var zoom: Double = 1.0
-	private val pan = Pair<Int, Int>(0, 0)
+	private var pan = Pair<Int, Int>(0, 0)
 	
 	//initiate various listeners
 	init {
@@ -277,33 +277,53 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				
 			}
 			
-			//values for the paint function
-			action.x1 = x
-			action.y1 = y
+			if (e.button != MouseEvent.BUTTON2) {
+				//values for the paint function
+				action.x1 = x
+				action.y1 = y
+			} else {
+				//we can't use the coordinates from getRealCoords for panning
+				// because it causes weird behavior
+				action.x1 = (e.x/zoom).toInt()
+				action.y1 = (e.y/zoom).toInt()				
+			}
 		}
 		
 		override fun mouseDragged(e: MouseEvent) {
-			//set the right mode
-			if (action.current != action.SELECTING && action.current != action.MOVING)
-				action.setCurrent(action.MOVING)
-			if (e.isShiftDown() && action.current != action.SELECTING)
-				action.setCurrent(action.SELECTING)
-			
-			val (x, y) = getRealCoords(e.x, e.y)
-			
-			if (action.current == action.MOVING) {
-				//move the gates
-				for (it in selectedGates) {
-					it.x += x - action.x1
-					it.y += y - action.y1
-				}
+			if (e.button == MouseEvent.BUTTON1 || e.button == MouseEvent.BUTTON3) { //left and right mouse buttons for moving/selecting
+				//set the right mode
+				if (action.current != action.SELECTING && action.current != action.MOVING)
+					action.setCurrent(action.MOVING)
+				if (e.isShiftDown() && action.current != action.SELECTING)
+					action.setCurrent(action.SELECTING)
 				
-				action.x1 = x
-				action.y1 = y
-			} else if (action.current == action.SELECTING) {
-				//set the coordinates of the selection box
-				action.x2 = x
-				action.y2 = y
+				val (x, y) = getRealCoords(e.x, e.y)
+				
+				if (action.current == action.MOVING) {
+					//move the gates
+					for (it in selectedGates) {
+						it.x += x - action.x1
+						it.y += y - action.y1
+					}
+					
+					action.x1 = x
+					action.y1 = y
+				} else if (action.current == action.SELECTING) {
+					//set the coordinates of the selection box
+					action.x2 = x
+					action.y2 = y
+				}
+			} else { //middle mouse button for panning
+				val panX = (e.x/zoom).toInt()
+				val panY = (e.y/zoom).toInt()
+				
+				pan = Pair(pan.first + panX - action.x1, pan.second + panY - action.y1)
+				println("pan = $pan")
+				println("x = $x, y = $y")
+				
+				//set the coordinates for the next movement
+				action.x1 = panX
+				action.y1 = panY
 			}
 			repaint()
 		}

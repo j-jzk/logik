@@ -25,7 +25,8 @@ class Switch: Gate {
 		g.drawRect(x, y, w, h)	
 		if (value) {
 			g.color = Color.RED
-			g.fillRect(x+1, y+1, w-1, h-1)
+			g.fillRect(x+1, y+1, w-2, h-2)
+			g.drawRect(x+1, y+1, w-2, h-2) //there was white space on the edges
 			g.color = Color.BLACK
 		}
 	}

@@ -27,11 +27,12 @@ class Lamp: Gate {
 		else
 			g.color = Color.BLACK
 		
-		g.fillRect(x+1, y+1, w-1, h-1)
+		g.fillRect(x+1, y+1, w-2, h-2)
+		g.drawRect(x+1, y+1, w-2, h-2) //there was white space on the edges
 		
 		g.color = Color.BLACK
-		g.drawLine(x, y, x+w, y+h)
-		g.drawLine(x+w, y, x, y+h)
+		g.drawLine(x+1, y+1, x+w-1, y+h-1)
+		g.drawLine(x+w-1, y+1, x+1, y+h-1)
 	}
 	
 	constructor(s: String) : super(s)

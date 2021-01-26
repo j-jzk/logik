@@ -28,26 +28,7 @@ object Sketch {
 		val nodes = arrayOfNulls<Gate>(nodesStr.lines().size)
 		for ((i, nodeStr) in nodesStr.lines().withIndex()) {
 			if (nodeStr == "") continue
-			
-			val (type, properties) = nodeStr.split(" ", limit=2)
-			val node: Gate = when(type) {
-				"And" -> And(properties)
-				"Lamp" -> Lamp(properties)
-				"Nand" -> Nand(properties)
-				"Nor" -> Nor(properties)
-				"Not" -> Not(properties)
-				"Or" -> Or(properties)
-				"Switch" -> Switch(properties)
-				"Xnor" -> Xnor(properties)
-				"Xor" -> Xor(properties)
-				"Label" -> Label(properties)
-				"ConnectionMidpoint" -> ConnectionMidpoint(properties)
-				else -> throw Exception("Invalid gate $type")
-			}
-			/*node.x = xS.toInt()
-			node.y = yS.toInt()*/
-			
-			nodes[i] = node
+			nodes[i] = gateFromString(nodeStr)
 		}
 		
 		for (connectionStr in connectionsStr.lines()) {
@@ -61,5 +42,23 @@ object Sketch {
 		}
 		
 		return nodes.map { it!! } //a node won't ever be null
+	}
+	
+	fun gateFromString(s: String): Gate {
+		val (type, properties) = s.split(" ", limit=2)
+		return when(type) {
+			"And" -> And(properties)
+			"Lamp" -> Lamp(properties)
+			"Nand" -> Nand(properties)
+			"Nor" -> Nor(properties)
+			"Not" -> Not(properties)
+			"Or" -> Or(properties)
+			"Switch" -> Switch(properties)
+			"Xnor" -> Xnor(properties)
+			"Xor" -> Xor(properties)
+			"Label" -> Label(properties)
+			"ConnectionMidpoint" -> ConnectionMidpoint(properties)
+			else -> throw Exception("Invalid gate $type")
+		}
 	}
 }

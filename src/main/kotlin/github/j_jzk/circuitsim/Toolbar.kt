@@ -50,6 +50,10 @@ class Toolbar(val vp: Viewport): JPanel() {
 			delGateBtn.addActionListener(ActionListener { vp.toolbar.delGate() })
 			add(delGateBtn)
 			space()
+		val duplicateBtn = JButton("Duplicate (Ctrl+D)")
+			duplicateBtn.addActionListener(ActionListener { vp.toolbar.duplicate() })
+			add(duplicateBtn)
+			space()
 		add(JLabel("Nodes"))
 		space()
 		

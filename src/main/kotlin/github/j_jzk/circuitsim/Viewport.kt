@@ -28,6 +28,7 @@ import java.awt.event.ActionEvent
 import java.awt.RenderingHints
 import java.awt.Graphics2D
 import java.awt.event.MouseWheelEvent
+import javax.swing.SwingUtilities
 
 class Viewport(val statusBar: JLabel): JPanel() {
 	private var gates = mutableListOf<Gate>()
@@ -49,12 +50,17 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		
 		getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control S"), "save")
 		getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control O"), "load")
+		getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control D"), "duplicate")
 		getActionMap().put("save", object : AbstractAction() {
 			override fun actionPerformed(e: ActionEvent) = toolbar.save()
 		})
 		
 		getActionMap().put("load", object : AbstractAction() {
 			override fun actionPerformed(e: ActionEvent) = toolbar.load()
+		})
+		
+		getActionMap().put("duplicate", object : AbstractAction() {
+			override fun actionPerformed(e: ActionEvent) = toolbar.duplicate()
 		})
 	}
 	
@@ -290,7 +296,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		}
 		
 		override fun mouseDragged(e: MouseEvent) {
-			if (e.button == MouseEvent.BUTTON1 || e.button == MouseEvent.BUTTON3) { //left and right mouse buttons for moving/selecting
+			if (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e)) { //left and right mouse buttons for moving/selecting
 				//set the right mode
 				if (action.current != action.SELECTING && action.current != action.MOVING)
 					action.setCurrent(action.MOVING)
@@ -457,6 +463,59 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				zoom *= amount * -factor
 			
 			repaint()
+		}
+		
+		fun duplicate() {
+			statusBar.text = "Please wait..."
+			
+			val newGates = arrayListOf<Gate>()
+			//the hash map is used for fast lookup when connecting the newly created
+			// gates together
+			val gateMap = HashMap<Gate, Gate>(selectedGates.size)
+			
+			//first create the new gates
+			for (gate in selectedGates) {
+				val new = Sketch.gateFromString(gate.toString())
+				newGates.add(new)
+				gateMap[gate] = new
+			}
+			
+			//then connect them,
+			for (gate in selectedGates) { //we can't loop over newGates, because they don't have any connections set
+				val newGate = gateMap[gate]!!
+				for (input in gate.inputs) {
+					if (gateMap[input] != null) {
+						//if the gate's input is in the gates that were duplicated, replace
+						// the connection to the old gate with a connection to the newly created one
+						newGate.inputs.add(gateMap[input]!!)
+						gateMap[input]!!.outputs.add(newGate)
+						
+						//activate triggers
+						newGate.onConnectInput()
+						gateMap[input]!!.onConnectOutput()
+					} else {
+						newGate.inputs.add(input)
+						input.outputs.add(newGate)
+						
+						newGate.onConnectInput()
+						input.onConnectOutput()
+					}
+				}
+			}
+			
+			//update their values
+			for (gate in newGates)
+				gate.updateValue()
+			
+			//and finally, add them to the circuit and set them as the selection so the user can
+			// easily move them
+			gates.addAll(newGates)
+			selectedGates.removeAll {true}
+			selectedGates.addAll(newGates)
+			
+			statusBar.text = "Items duplicated."
+			repaint()
+			
 		}
 	}
 	

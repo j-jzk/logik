@@ -29,6 +29,7 @@ import java.awt.RenderingHints
 import java.awt.Graphics2D
 import java.awt.event.MouseWheelEvent
 import javax.swing.SwingUtilities
+import java.lang.IndexOutOfBoundsException
 
 class Viewport(val statusBar: JLabel): JPanel() {
 	private var gates = mutableListOf<Gate>()
@@ -207,6 +208,18 @@ class Viewport(val statusBar: JLabel): JPanel() {
 								it.inputs.remove(gate)
 								gate.outputs.remove(it)
 								it.updateValue()
+								
+								if (gate is ConnectionMidpoint) {
+									var g = gate
+									while (g is ConnectionMidpoint) {
+										gates.remove(g)
+										try {
+											g = g.inputs[0]
+										} catch (e: IndexOutOfBoundsException) {
+											break
+										}
+									}
+								}
 							}
 						}
 					

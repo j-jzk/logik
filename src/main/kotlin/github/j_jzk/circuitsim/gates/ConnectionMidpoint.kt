@@ -22,15 +22,10 @@ class ConnectionMidpoint: Gate {
 	constructor(s: String) : super(s)
 	constructor(x: Int, y: Int) : super(x, y)
 	
-	//don't allow more than one output or input
+	//don't allow more than one input
 	override fun onConnectInput() {
 		if (inputs.size > 1)
 			inputs.removeAt(1)
-	}
-	
-	override fun onConnectOutput() {
-		if (outputs.size > 1)
-			outputs.removeAt(1)
 	}
 	
 	override fun onDelete() {

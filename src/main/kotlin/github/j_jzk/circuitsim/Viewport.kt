@@ -337,9 +337,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				val panY = (e.y/zoom).toInt()
 				
 				pan = Pair(pan.first + panX - action.x1, pan.second + panY - action.y1)
-				println("pan = $pan")
-				println("x = $x, y = $y")
-				
+
 				//set the coordinates for the next movement
 				action.x1 = panX
 				action.y1 = panY
@@ -459,6 +457,12 @@ class Viewport(val statusBar: JLabel): JPanel() {
 				try {
 					gates = Sketch.decode(file.readText()).toMutableList()
 					lastSave = file
+					
+					//maybe add a more efficient method for larger files? (directed graph algorithms)
+					for (gate in gates) {
+						gate.updateValue()
+					}
+					
 					statusBar.text = "Sketch loaded successfully."
 				} catch (e: Exception) {
 					statusBar.text = "ERROR LOADING FILE: ${e.message} (see terminal output for details)"

@@ -67,6 +67,7 @@ class Toolbar(val vp: Viewport): JPanel() {
 		addCreateBtn(JButton("Create NAND gate"), { Nand(0,0) }, KeyEvent.VK_D)
 		addCreateBtn(JButton("Create NOR gate"), { Nor(0,0) }, KeyEvent.VK_R)
 		addCreateBtn(JButton("Create XNOR gate"), { Xnor(0,0) })
+		addCreateBtn(JButton("Create flip-flop"), { Toggle(0, 0) })
 		
 		add(JLabel("View"))
 		space()

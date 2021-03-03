@@ -58,6 +58,7 @@ object Sketch {
 			"Xor" -> Xor(properties)
 			"Label" -> Label(properties)
 			"ConnectionMidpoint" -> ConnectionMidpoint(properties)
+			"Toggle" -> Toggle(properties)
 			else -> throw Exception("Invalid gate $type")
 		}
 	}

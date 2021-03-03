@@ -4,20 +4,23 @@
 package github.j_jzk.circuitsim
 
 import java.awt.BorderLayout
+import java.awt.EventQueue
+import java.awt.event.WindowEvent
 import javax.swing.JFrame
 import javax.swing.JLabel
-import javax.swing.UIManager
-import java.awt.EventQueue
 import javax.swing.SwingUtilities
+import javax.swing.UIManager
 
 class App: JFrame("Logic Circuit Simulator") {
+	lateinit var vp: Viewport
+	
 	fun initGui() {		
 		setLayout(BorderLayout())
-		defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+		defaultCloseOperation = JFrame.DO_NOTHING_ON_CLOSE
 		setSize(800, 600)
 		
 		val statusBar = JLabel("")
-		val vp = Viewport(statusBar)
+		vp = Viewport(statusBar)
 		add(vp, BorderLayout.CENTER)
 		add(Toolbar(vp), BorderLayout.LINE_END)
 		add(statusBar, BorderLayout.PAGE_END)
@@ -25,6 +28,11 @@ class App: JFrame("Logic Circuit Simulator") {
 		pack()
 		
 		setVisible(true)
+	}
+	
+	override fun processWindowEvent(e: WindowEvent) {
+		if (e.id == WindowEvent.WINDOW_CLOSING && vp.confirmClose())
+			this.dispose()
 	}
 }
 

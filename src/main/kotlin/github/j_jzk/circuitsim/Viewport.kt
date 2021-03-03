@@ -30,12 +30,14 @@ import java.awt.Graphics2D
 import java.awt.event.MouseWheelEvent
 import javax.swing.SwingUtilities
 import java.lang.IndexOutOfBoundsException
+import javax.swing.JOptionPane
 
 class Viewport(val statusBar: JLabel): JPanel() {
 	private var gates = mutableListOf<Gate>()
 	private val action = Action()
 	public val toolbar = ToolbarHandler()
 	private var lastSave: File? = null
+	private var changedSinceSave = false
 	
 	private val selectedGates = mutableSetOf<Gate>()
 	
@@ -53,7 +55,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 		getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control O"), "load")
 		getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control D"), "duplicate")
 		getActionMap().put("save", object : AbstractAction() {
-			override fun actionPerformed(e: ActionEvent) = toolbar.save()
+			override fun actionPerformed(e: ActionEvent) { toolbar.save() }
 		})
 		
 		getActionMap().put("load", object : AbstractAction() {
@@ -153,14 +155,33 @@ class Viewport(val statusBar: JLabel): JPanel() {
 	/** computes the "real" coordinates from the ones on the screen (taking into account the zoom and pan) */
 	private fun getRealCoords(x: Int, y: Int) = Pair((x/zoom - pan.first).toInt(), (y/zoom - pan.second).toInt())
 	
-	fun saveSketch() {
+	fun saveSketch(): Boolean {
 		try {
 			lastSave?.writeText(Sketch.encode(gates.toTypedArray()))
+			changedSinceSave = false
 			statusBar.text = "File successfully saved."
+			return true
 		} catch (e: Exception) {
 			statusBar.text = "ERROR SAVING FILE: ${e.message} (see terminal output for details)"
 			e.printStackTrace()
+			return false
 		}
+	}
+	
+	fun confirmClose(): Boolean {
+		if (changedSinceSave) {
+			val result = JOptionPane.showConfirmDialog(this,
+				"You have made changes to the sketch since the last save.\nDo you want to save them?",
+				"Confirm closing",
+				JOptionPane.YES_NO_CANCEL_OPTION)
+			
+			return when(result) {
+				0 -> toolbar.save() //save
+				1 -> true //don't save
+				else -> false //cancel / window closed
+			}
+		} else
+			return true
 	}
 	
 	private inner class MouseHandler: MouseInputAdapter() {
@@ -199,7 +220,9 @@ class Viewport(val statusBar: JLabel): JPanel() {
 							action.subject?.onConnectInput()
 							action.subject?.updateValue()
 							action.x1 = 0; action.x2 = 0; action.y1 = 0; action.y2 = 0
+							
 							repaint()
+							changedSinceSave = true
 						}
 				
 					action.DEL_INPUT -> //remove an input from a gate
@@ -221,6 +244,8 @@ class Viewport(val statusBar: JLabel): JPanel() {
 									}
 								}
 							}
+							
+							changedSinceSave = true
 						}
 					
 					action.ADD_GATE -> action.subject?.let {
@@ -229,6 +254,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 						gates.add(it)
 						it.onCreate()
 						it.updateValue()
+						changedSinceSave = true
 					}
 				}
 				
@@ -327,6 +353,8 @@ class Viewport(val statusBar: JLabel): JPanel() {
 					
 					action.x1 = x
 					action.y1 = y
+					
+					changedSinceSave = true
 				} else if (action.current == action.SELECTING) {
 					//set the coordinates of the selection box
 					action.x2 = x
@@ -404,6 +432,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			//clear the selection
 			selectedGates.removeAll() {true}
 			
+			changedSinceSave = true
 			repaint()
 		}
 		
@@ -413,11 +442,10 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			statusBar.text = "Click to select position"
 		}
 		
-		fun save() {
+		fun save(): Boolean {
 			//if the last save location is known, save there
 			if (lastSave != null) {
-				saveSketch()
-				return
+				return saveSketch()
 			}
 			
 			//otherwise show a file chooser
@@ -433,9 +461,10 @@ class Viewport(val statusBar: JLabel): JPanel() {
 					file = File(file.getPath() + ".lgk")
 				
 				lastSave = file
-				saveSketch()
+				return saveSketch()
 			} else {
 				statusBar.text = "Save cancelled."
+				return false
 			}
 		}
 		
@@ -464,6 +493,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 					}
 					
 					statusBar.text = "Sketch loaded successfully."
+					changedSinceSave = false
 				} catch (e: Exception) {
 					statusBar.text = "ERROR LOADING FILE: ${e.message} (see terminal output for details)"
 					e.printStackTrace()
@@ -530,6 +560,7 @@ class Viewport(val statusBar: JLabel): JPanel() {
 			selectedGates.removeAll {true}
 			selectedGates.addAll(newGates)
 			
+			changedSinceSave = true
 			statusBar.text = "Items duplicated."
 			repaint()
 			

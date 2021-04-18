@@ -10,6 +10,7 @@ import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.SwingUtilities
 import javax.swing.UIManager
+import com.formdev.flatlaf.FlatLightLaf
 
 class App: JFrame("Logic Circuit Simulator") {
 	lateinit var vp: Viewport
@@ -40,15 +41,22 @@ fun main(args: Array<String>) {
 	val app = App()
 	
 	//use anti-aliased fonts - doesn't work for some reason
-	System.setProperty("awt.useSystemAAFontSettings","on");
-	System.setProperty("swing.aatext", "true");
+	System.setProperty("awt.useSystemAAFontSettings", "on")
+	System.setProperty("swing.aatext", "true")
+	
+	
 	
 	try {
-		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-		SwingUtilities.updateComponentTreeUI(app)
+		UIManager.setLookAndFeel(FlatLightLaf())
+//		SwingUtilities.updateComponentTreeUI(app)
 	} catch (e: Exception) {
 		//do nothing, continue with the default look and feel
+		println("FlatLAF couldn't be loaded, continuing with default LaF")
 	}
+	
+	// configure look and feel
+	UIManager.put("Component.hideMnemonics", false)
+	
 	
 	EventQueue.invokeLater { app.initGui() }
 }
